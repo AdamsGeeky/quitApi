@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 Int      @id @default(autoincrement())
+  name               String
+  email              String   @unique
+  role               String   // 'lecturer' or 'student'
+  registrationNumber String?  @unique
+  pin                String
+  createdAt          DateTime @default(now())
+  quizzes            Quiz[]   @relation("QuizLecturer")
+  assignments        Assignment[]
+}
+
+model Quiz {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String?
+  lecturer    User       @relation("QuizLecturer", fields: [lecturerId], references: [id])
+  lecturerId  Int
+  questions   Question[]
+  assignments Assignment[]
+  createdAt   DateTime @default(now())
+}
+
+model Question {
+  id             Int    @id @default(autoincrement())
+  quiz           Quiz   @relation(fields: [quizId], references: [id])
+  quizId         Int
+  questionText   String
+  questionType   String // 'mcq', 'text', 'boolean'
+  options        String? // JSON format for MCQ options
+  correctAnswer  String  // JSON format for correct answers
+}
+
+model Assignment {
+  id          Int      @id @default(autoincrement())
+  quiz        Quiz     @relation(fields: [quizId], references: [id])
+  quizId      Int
+  student     User     @relation(fields: [studentId], references: [id])
+  studentId   Int
+  status      String   @default("assigned") // 'assigned', 'completed'
+  score       Float?
+  completedAt DateTime?
+  attempts    Attempt[]
+}
+
+model Attempt {
+  id           Int      @id @default(autoincrement())
+  assignment   Assignment @relation(fields: [assignmentId], references: [id])
+  assignmentId Int
+  answers      String   // JSON format
+  score        Float?
+  submittedAt  DateTime @default(now())
+}
